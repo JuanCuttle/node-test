@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 app.use('/categories', categoryRoutes); // Anything that starts with /categories, will be redirected to variable categoryRoutes
 
 app.use((req, res, next) => {
-	const error = new Error('Not found');
+	const error = new Error('URL not found');
 	error.status = 404;
 	next(error);
 });

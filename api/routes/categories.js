@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const router = express.Router(); // Router which will register routes
 
-const categories = [{
+/*const categories = [{
 	id: 1,
 	name: 'one',
 	childrenIds: []
@@ -12,10 +12,10 @@ const categories = [{
 	id: 2,
 	name: 'two',
 	childrenIds: []
-}];
+}];*/
 
 router.get('/', (req, res, next) => { // GET requests: URL (after coming here, so /categories/ 
-	//res.status(200).json(categories) //'Handling GET requests to /categories'
+	//res.status(200).json(categories)
 	Category.find().exec()
 	.then(docs => {
 		console.log(docs);
@@ -23,11 +23,10 @@ router.get('/', (req, res, next) => { // GET requests: URL (after coming here, s
 	})
 	.catch(err => {
 		console.log(err);
-		res.status(500).json(err);
+		res.status(500).json({error: err});
 	});
 });
 
-// working
 router.get('/:categoryId', (req, res, next) => { // GET requests: URL (after coming here, so /categories/
 	const paramId = req.params.categoryId;
 
@@ -48,7 +47,7 @@ router.get('/:categoryId', (req, res, next) => { // GET requests: URL (after com
 	});
 })
 
-router.post('/', (req, res, next) => { // GET requests: URL (after coming here, so /categories/
+router.post('/', (req, res, next) => { // POST requests: URL (after coming here, so /categories/
 	/*const category = { // Extract JSON category object from request
 		id: req.body.id,
 		name: req.body.name,
@@ -60,23 +59,53 @@ router.post('/', (req, res, next) => { // GET requests: URL (after coming here, 
 		name: req.body.name,
 		childrenIds: req.body.childrenIds
 	});
-	category.save()
-	.then(result => {
-			console.log(result);
-			res.status(200).json({
-			message: result//ok: true
-		});
+
+	Category.find({id: category.id}).exec()
+	.then(doc => {
+		if (doc.length === 0){ // if category doesn't yet exist, check validity
+			const childrenIds = category.childrenIds;
+
+			//check if new category is valid
+			Category.find({id: childrenIds}).exec()  // find child categories
+			.then(result => {
+				// if the number of returned categories equals the number of expected
+				// categories, save the new category (ie, all exist in database). If not, ignore POST request
+				if (result.length === childrenIds.length){
+					category.save()
+					.then(result => {
+							console.log(result);
+							res.status(200).json({
+								//message: result
+								ok: true
+							});
+					})
+					.catch(err => { // save failed
+							console.log(err);
+							res.status(500).json({
+							error: err
+						});
+					});
+				} else { // return error if any child not found
+					res.status(500).json({
+			    		ok: false,
+			    		error: 'InvalidCategories'
+			    	});
+				}
+			})
+			.catch(err => {
+				res.status(500).json({error: err});
+			});
+		} else { // if category already exists, return error
+			res.status(500).json({ok: false, error: 'CategoryAlreadyExists'})
+		}
 	})
 	.catch(err => {
-			console.log(err);
-			res.status(500).json({
-			message: err
-		});
+		res.status(500).json({error: err});
 	});
+
 	
 });
 
-// working
 router.delete("/:productId", (req, res, next) => {
 	const paramId = req.params.productId;
 	Category.deleteMany({id: paramId}).exec()
@@ -84,7 +113,7 @@ router.delete("/:productId", (req, res, next) => {
 		res.status(200).json(result);
 	})
 	.catch(err => {
-		console.log(err);
+		//console.log(err);
 		res.status(500).json({
 			error: err
 		})
