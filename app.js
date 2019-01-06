@@ -2,8 +2,16 @@ const express = require('express');
 const app = express(); // initiate express application to access its functions
 const morgan = require('morgan'); // server log service
 const bodyParser = require('body-parser'); // facilitates HTTP body parsing on requests
+const mongoose = require('mongoose'); // mongodb
 
 const categoryRoutes = require('./api/routes/categories');
+
+mongoose.connect('mongodb+srv://node-test:'+process.env.MONGO_ATLAS_PW+'@node-test-zzvms.mongodb.net/test?retryWrites=true',
+	{
+		//useMongoClient: true,
+		useNewUrlParser: true
+	}
+);
 
 /*app.use((req, res, next) => {
 	res.status(200).json({ //use response to send a json response
